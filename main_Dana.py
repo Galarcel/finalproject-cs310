@@ -160,6 +160,17 @@ def prompt():
 ############################################################
 # ADD ALL FUNCTIONS NEEDED 
 ############################################################
+## Helper function 1 - create textfile 
+
+def create_text_file(trip_data):
+    content = ""
+    for key, value in trip_data.items():
+        content += f"{'-' * 30}\n{key}\n{'-' * 30}\n    {value}\n\n" 
+    current_directory = os.getcwd()
+    file_path = os.path.join(current_directory, "trip_data.txt")
+    with open(file_path, "w") as file:
+        file.write(content)
+    return file_path
 ############################################################
 #PLAN BIRDS
 def plan_trip(baseurl):
@@ -221,20 +232,22 @@ def plan_trip(baseurl):
         #
         return
     
-      body = res.json()
+      row = res.json()
       
 
-      datastr = body
+      trip_data = {
+          "id": row[0],
+          "bird_name": row[1],
+          "start_loc": row[2],
+          "end_loc": row[3],
+          "trans_mode": row[4],
+          "distance": row[5],
+          "instructions": row[6]
+      }
 
-     
-      
-      results = ""
-      ###???????????????/ process text file not image
-      bytes = base64.b64decode(datastr)
-      results = bytes.decode('utf-8')
-    
-      
-      print(results)
+      file_path = create_text_file(trip_data)
+
+      print(file_path)
       return
 
     except Exception as e:
