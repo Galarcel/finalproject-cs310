@@ -54,7 +54,7 @@ def test():
 
     
     data = get_recent_observations(region_code, species_code)
-
+    #print("DATAA::: ", data)
     length = len(data) if len(data) <= 10 else 10
     if data:
         for i in range(length):

@@ -34,6 +34,7 @@ def get_instructions(start_location, end_location):
     if response.status_code == 200:
         try:
             data = response.json()
+            print("DATAA  : ", data)
             instructions = []
             
             # Safely extract the steps
@@ -81,11 +82,12 @@ def get_distance_and_time(start_location,end_location):
     if response.status_code == 200:
         try:
             data = response.json()
+            print("DATA:  ",data)
             # Accessing the distance and time from the starting point
             distance = data['features'][0]['properties']['distance']
             time = data['features'][0]['properties']['time']
-            # print(f"Total Distance: {distance} meters")
-            # print(f"Total Time: {time} seconds")
+            print(f"Total Distance: {distance} meters")
+            print(f"Total Time: {time} seconds")
             return[distance,time]
         except Exception as e:
             print(f"Error parsing response: {e}")
@@ -93,6 +95,10 @@ def get_distance_and_time(start_location,end_location):
         print(f"API Error: {response.status_code}")
         print(response.text)
         
+#************************************** 
+##Testing
+
+#get_instructions(start_location, end_location)
 # **************************************
 # any time you import geoapify it prints this, so comment it out vvv
 
