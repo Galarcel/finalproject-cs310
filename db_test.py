@@ -2,6 +2,8 @@ import requests
 import jsons
 import geoapify
 
+from dotenv import load_dotenv
+
 
 import uuid
 import pathlib
@@ -16,6 +18,13 @@ import boto3
 
 from configparser import ConfigParser
 
+
+
+load_dotenv()  # Load variables from .env
+
+aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
+aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+aws_region = os.getenv("AWS_DEFAULT_REGION")
 
 class Trip:
 
@@ -222,16 +231,23 @@ def plan_trip(baseurl):
     print("Enter bird name>")
     bird_name = input()
 
-    print("Enter starting address>")
+    print("Enter starting address in detail>")
     strt_addr = input()
 
-    print("Enter destination address>")
+    print("Enter destination location name (from output results of 4 or 5>")
     dst_addr = input()
+    
+    print("Enter destination latitude>")
+    dst_lat = input()
+    
+    print("Enter destination longitude>")
+    dst_long = input()
 
     print("Enter transportation mode: (car, bicycle, bus, transit, walk)")
     transport = input()
 
-    data = {"birdname": bird_name, "startaddress": strt_addr, "destaddress": dst_addr, "mode": transport}
+    #data = {"birdname": bird_name, "startaddress": strt_addr, "destaddress": dst_addr, "mode": transport}
+    data = {"birdname": bird_name, "startaddress": strt_addr, "destlat": dst_lat,"destlong": dst_long,"destaddress": dst_addr, "mode": transport}
 
     #
     # call the web service:
@@ -262,10 +278,15 @@ def plan_trip(baseurl):
     # success, extract trip:
     #
     body = res.json()
+    trip_id = body.get('trip_id')
+    instructions = body.get('instructions', '').split('\n')
 
-    tripid = body
+    print("\nTrip Created Successfully!")
+    print(f"Trip ID: {trip_id}")
+    print("\nInstructions:")
+    for step_num, step in enumerate(instructions, start=1):
+        print(f"  {step_num}. {step}")
 
-    print("Trip created:", tripid)
     return
 
   except Exception as e:
@@ -307,7 +328,18 @@ def region_birds(baseurl):
         #
         if res.status_code == 200:  # Success
             body = res.json()
-            print(body)  # Print the response data
+            if body:
+                print(f"\nRecent Bird Observations in Region: {reg}\n" + "-" * 50)
+                for bird in body:
+                    print(f"  - Common Name: {bird.get('comName', 'Unknown')}")
+                    print(f"    Scientific Name: {bird.get('sciName', 'Unknown')}")
+                    print(f"    Location: {bird.get('locName', 'Unknown')}")
+                    print(f"    Coordinates: ({bird.get('lat', 'Unknown')}, {bird.get('lng', 'Unknown')})")
+                    print(f"    **Date Observed: {bird.get('obsDt', 'Unknown')}")
+                    print(f"    Number Observed: {bird.get('howMany', 'Unknown')}\n")
+                    print("-" * 50)
+            else:
+                print("No recent bird observations found in the specified region.")
         else:
             # Failed:
             print("Failed with status code:", res.status_code)
@@ -392,6 +424,17 @@ def nearby_birds(baseurl):
         # }
 #
 #
+## Helper function 1 - create textfile 
+
+def create_text_file(trip_data):
+    content = ""
+    for key, value in trip_data.items():
+        content += f"{'-' * 30}\n{key}\n{'-' * 30}\n    {value}\n\n" 
+    current_directory = os.getcwd()
+    file_path = os.path.join(current_directory, "trip_data.txt")
+    with open(file_path, "w") as file:
+        file.write(content)
+    return file_path
 
 def download_trip(baseurl):
     """
@@ -441,6 +484,27 @@ def download_trip(baseurl):
                 body = res.json()
                 print("Error message:", body)
             return
+        
+       
+        
+        #if output was list
+        #row = res.json()
+        '''
+        trip_data = {
+            "id": row[0],
+            "bird_name": row[1],
+            "start_loc": row[2],
+            "end_loc": row[3],
+            "trans_mode": row[4],
+            "distance": row[5],
+            "instructions": row[6]
+        }
+        '''
+        trip_data = res.json()
+        file_path = create_text_file(trip_data)
+
+        print(file_path)
+        return
 
     except Exception as e:
         logging.error("**ERROR: nearby_birds() failed:")
