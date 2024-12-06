@@ -359,7 +359,7 @@ def region_birds(baseurl):
   
 def nearby_birds(baseurl):
     """
-    Outputs recent bird observations nearby.
+    Outputs recent bird observations nearby and allows users to plan a trip.
 
     Parameters
     ----------
@@ -379,7 +379,6 @@ def nearby_birds(baseurl):
         url = f"{baseurl}{api}?address={addr}"
         res = requests.get(url)
 
-
         if res.status_code == 200:  # Success
             body = res.json()
             if body:  # Check if the response contains data
@@ -395,6 +394,64 @@ def nearby_birds(baseurl):
                     print(f"  - Number Observed: {bird.get('howMany', 'Unknown')}")
                     print(f"  - Location Private: {bird.get('locationPrivate', 'Unknown')}")
                     print("-" * 40)
+
+                print("Enter the number of the observation to create a new plan, or '99' to return to the main menu.")
+                selection = input("> ").strip()
+
+                if selection == '99':
+                    return
+
+                try:
+                    bird_index = int(selection) - 1
+                    if 0 <= bird_index < len(body):
+                        selected_bird = body[bird_index]
+                        bird_name = selected_bird.get('comName', 'Unknown')
+                        destination_name = selected_bird.get('locName', 'Unknown')
+                        latitude = selected_bird.get('lat', '')
+                        longitude = selected_bird.get('lng', '')
+
+                        print("\nPlanning a trip to the selected bird observation:")
+                        print(f"  - Bird Name: {bird_name}")
+                        print(f"  - Destination: {destination_name} ({latitude}, {longitude})")
+
+                        # Collect user inputs for planning the trip
+                        print("Enter transportation mode (car, bicycle, bus, transit, walk):")
+                        transport = input("> ").strip()
+
+                        # Prepare the data for planning the trip
+                        data = {
+                            "birdname": bird_name,
+                            "startaddress": addr,
+                            "destlat": latitude,
+                            "destlon": longitude,
+                            "destaddress": destination_name,
+                            "mode": transport
+                        }
+
+                        # Call the plan_trip API
+                        api = '/plantrip'
+                        url = baseurl + api
+                        res = requests.post(url, json=data)
+
+                        if res.status_code == 200:
+                            body = res.json()
+                            trip_id = body.get('trip_id')
+                            instructions = body.get('instructions', '').split('\n')
+
+                            print("\nTrip Created Successfully!")
+                            print(f"Trip ID: {trip_id}")
+                            print("\nInstructions:")
+                            for step_num, step in enumerate(instructions, start=1):
+                                print(f"  {step_num}. {step}")
+                        else:
+                            print("Failed to plan trip. Please try again.")
+                            if res.status_code == 500:
+                                body = res.json()
+                                print("Error message:", body)
+                    else:
+                        print("Invalid selection. Please try again.")
+                except ValueError:
+                    print("Invalid input. Please enter a number corresponding to an observation or '99' to return.")
             else:
                 print("No bird observations found nearby.")
         else:
@@ -408,8 +465,6 @@ def nearby_birds(baseurl):
         logging.error("**ERROR: nearby_birds() failed:")
         logging.error("URL: " + url)
         logging.error(e)
-
-
 #############################
 # Here's what download_trip will receive from the Lambda:
 #
